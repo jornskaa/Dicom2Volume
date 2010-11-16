@@ -1,38 +1,35 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.IO.Compression;
 
 namespace Dicom2Volume
 {
     public class GZip
     {
-        public static void Compress(FileInfo fi)
+        public static void Compress(string sourceFilename, string outputFilename)
         {
-            using (var inFile = fi.OpenRead())
+            using (var inFile = File.OpenRead(sourceFilename))
             {
-                using (var outFile = File.Create(fi.FullName + ".gz"))
+                using (var outFile = File.Create(outputFilename))
                 {
                     using (var compress = new GZipStream(outFile, CompressionMode.Compress))
                     {
                         inFile.CopyTo(compress);
-                        Logger.Debug("Compressed {0} from {1} to {2} bytes.", fi.Name, fi.Length, outFile.Length);
                     }
                 }
             }
         }
 
-        public static void Decompress(FileInfo fi)
+        public static void Decompress(string sourceFilename, string outputFilename)
         {
-            using (var inFile = fi.OpenRead())
+            using (var inFile = File.OpenRead(sourceFilename))
             {
-                var curFile = fi.FullName;
-                var origName = curFile.Remove(curFile.Length - fi.Extension.Length);
-                using (var outFile = File.Create(origName))
+                //var curFile = new FileInfo(sourceFilename);
+                //var origName = sourceFilename.Remove(sourceFilename.Length - curFile.Extension.Length);
+                using (var outFile = File.Create(outputFilename))
                 {
                     using (var decompress = new GZipStream(inFile, CompressionMode.Decompress))
                     {
                         decompress.CopyTo(outFile);
-                        Logger.Debug("Decompressed: {0}", fi.Name);
                     }
                 }
             }

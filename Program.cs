@@ -15,8 +15,11 @@ namespace Dicom2Volume
         [STAThread]
         static void Main(string[] args)
         {
-            var tarFiles = Tar.ListFileInfos(File.OpenRead(@"E:\test.tar"));
-            Tar.Untar(File.OpenRead(@"E:\test.tar"), @"E:\untar\");
+            //var tarFiles = Tar.ListFileInfos(File.OpenRead(@"E:\test.tar"));
+            //Tar.Create(@"E:\tar\a.tar", @"E:\data\volume\phenix\dcm2vol\volume\volume.dds", @"E:\data\volume\phenix\dcm2vol\volume\volume.xml");
+            //GZip.Compress(@"E:\tar\a.tar", @"E:\tar\b.tar.gz");
+            //GZip.Decompress(@"E:\tar\b.tar.gz", @"E:\tar\c.tar");
+            //Tar.Untar(File.OpenRead(@"E:\tar\c.tar"), @"E:\tar\d\");
             
             if (args.Length > 1)
             {

@@ -64,7 +64,7 @@ namespace Dicom2Volume
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 155)]
             public char[] Prefix;               /* 345 */
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 12)]
-            public char[] Reserved;            /* 500 */
+            public char[] Reserved;             /* 500 */
         }
 
         private static DateTime _utcTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -77,6 +77,7 @@ namespace Dicom2Volume
             {
                 var header = Utils.ReadStruct<Header>(inputStream);
                 var magic = ToString(header.Magic);
+
                 if (magic != "ustar ") break;
 
                 var filename = ToString(header.Prefix) + ToString(header.Name);
@@ -148,39 +149,51 @@ namespace Dicom2Volume
             inputStream.Close();
         }
 
-        public static void Write(string outputFilename, params string[] sourceFilenames)
+        public static void Create(string outputFilename, params string[] sourceFilenames)
         {
-            var utcTime = DateTime.Now.ToFileTimeUtc();
+            var outputStream = File.Create(outputFilename);
+            var mtime = (long)(DateTime.Now - _utcTime - TimeSpan.FromHours(1)).TotalSeconds;
             
-            for (var i = 0; i < sourceFilenames.Length; i++)
+            foreach (var sourceFilename in sourceFilenames)
             {
-                var filename = sourceFilenames[i];
-                var fileInfo = new FileInfo(filename);
+                var fileInfo = new FileInfo(sourceFilename);
+                var name = Path.GetFileName(sourceFilename);
                 var header = new Header
                 {
-                    Name = sourceFilenames[i].ToCharArray(),
-                    Mode = "0000644".ToCharArray(),
-                    Uid = "0000764".ToCharArray(),
-                    Gid = "0000764".ToCharArray(),
-                    Size = String.Format("{0:00000000000}", fileInfo.Length).ToCharArray(),
-                    MTime = utcTime.ToString().ToCharArray(),
-                    Checksum = "0".ToCharArray(),
+                    Name = ToCharArray(name, 100),
+                    Mode = ToCharArray("0000644", 8),
+                    Uid = ToCharArray("0000764", 8),
+                    Gid = ToCharArray("0000764", 8),
+                    Size = ToCharArray(String.Format("{0:00000000000}", int.Parse(Convert.ToString(fileInfo.Length, 8))), 12),
+                    MTime = ToCharArray(Convert.ToString(mtime, 8), 12),
+                    Checksum = ToCharArray(new string(' ', 8), 8),
+                    LinkName = ToCharArray("", 100),
+                    Magic = ToCharArray("ustar ", 6),
+                    Version = ToCharArray(" ", 2),
+                    UName = ToCharArray("passion", 32),
+                    GName = ToCharArray("passion", 32),
+                    DevMajor = ToCharArray("", 8),
+                    DevMinor = ToCharArray("", 8),
+                    Prefix = ToCharArray("", 155),
+                    Reserved = ToCharArray("", 12),
                     TypeFlag = '0',
-                    LinkName = "".ToCharArray(),
-                    Magic = "ustar ".ToCharArray(),
-                    Version = " ".ToCharArray(),
-                    UName = "passion".ToCharArray(),
-                    GName = "passion".ToCharArray(),
-                    DevMajor = "".ToCharArray(),
-                    DevMinor = "".ToCharArray(),
-                    Prefix = "".ToCharArray()
                 };
 
                 var headerBytes = Utils.RawSerialize(header);
                 var checksum = headerBytes.Aggregate(0, (current, t) => current + t);
-                header.Checksum = checksum.ToString().ToCharArray();
+                header.Checksum = ToCharArray(String.Format("{0:000000}\0 ", int.Parse(Convert.ToString(checksum, 8))), 8);
                 headerBytes = Utils.RawSerialize(header);
+
+                var sourceBytes = File.ReadAllBytes(sourceFilename);
+                outputStream.Write(headerBytes, 0, headerBytes.Length);
+                outputStream.Write(sourceBytes, 0, sourceBytes.Length);
+
+                var blockAlignBytes = (int)((512 - (outputStream.Position % 512)) % 512);
+                outputStream.Write(new byte[blockAlignBytes], 0, blockAlignBytes);
             }
+
+            outputStream.Write(new byte[1024], 0, 1024);
+            outputStream.Close();
         }
 
         private static string ToString(char[] chars)
@@ -190,22 +203,22 @@ namespace Dicom2Volume
 
         private static string TrimNulls(string text)
         {
-            if (text == null) return null;
-
-            int startIndex;
-            for (startIndex = 0; startIndex < text.Length; startIndex++)
-            {
-                if (text[startIndex] != '\0') break;
-            }
-
             var length = 0;
-            for (var i = (text.Length - 1); i >= startIndex; i--)
+            for (var i = (text.Length - 1); i >= 0; i--)
             {
-                length = (i + 1) - startIndex;
-                if (text[i] != '\0') break;
+                if (text[i] == '\0') continue;
+                length = (i + 1);
+                break;
             }
 
-            return text.Substring(startIndex, length);
+            return text.Substring(0, length);
+        }
+
+        private static char[] ToCharArray(string text, int length)
+        {
+            var nullCount = length - text.Length;
+            var output = text + new string('\0', nullCount);
+            return output.ToCharArray();
         }
     }
 }
