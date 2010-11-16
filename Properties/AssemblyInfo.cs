@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("dcm2dds")]
+[assembly: AssemblyTitle("Dicom2Volume")]
 [assembly: AssemblyDescription("Converts from DICOM images to XML, raw volume and DDS volume files and metadata.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Jørn Skaarud Karlsen")]
-[assembly: AssemblyProduct("dcm2dds")]
+[assembly: AssemblyProduct("dcm2vol")]
 [assembly: AssemblyCopyright("Jørn Skaarud Karlsen")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

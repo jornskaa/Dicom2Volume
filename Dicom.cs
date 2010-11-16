@@ -2,7 +2,7 @@
 using System.Globalization;
 using System.IO;
 
-namespace Dicom2dds
+namespace Dicom2Volume
 {
     public enum ValueTypes
     {

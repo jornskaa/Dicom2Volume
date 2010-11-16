@@ -2,7 +2,7 @@
 using System.IO;
 using System.IO.Compression;
 
-namespace Dicom2dds
+namespace Dicom2Volume
 {
     public class GZip
     {

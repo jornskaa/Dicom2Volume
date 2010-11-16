@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
 
-namespace Dicom2dds
+namespace Dicom2Volume
 {
     public class ImageData
     {

@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Runtime.InteropServices;
 
-namespace Dicom2dds
+namespace Dicom2Volume
 {
     public class Utils
     {

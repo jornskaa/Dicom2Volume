@@ -7,7 +7,7 @@ using System.Security.Permissions;
 using System.Threading;
 using System.Windows.Forms;
 
-namespace Dicom2dds
+namespace Dicom2Volume
 {
 
     public class Program

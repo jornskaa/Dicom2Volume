@@ -8,8 +8,8 @@
     <ProjectGuid>{D656B721-FB79-497E-B613-18C363E45991}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Dicom2dds</RootNamespace>
-    <AssemblyName>dcm2dds</AssemblyName>
+    <RootNamespace>Dicom2Volume</RootNamespace>
+    <AssemblyName>dcm2vol</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>

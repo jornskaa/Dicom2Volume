@@ -5,7 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Dicom2dds
+namespace Dicom2Volume
 {
     public enum TarFiletype
     {

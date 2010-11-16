@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
-using System.Xml.Serialization;
 
-namespace Dicom2dds
+namespace Dicom2Volume
 {
     public struct SerializeTest
     {

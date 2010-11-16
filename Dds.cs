@@ -2,7 +2,7 @@
 using System.IO;
 using System.Runtime.InteropServices;
 
-namespace Dicom2dds
+namespace Dicom2Volume
 {
     public enum FormatEnum : uint
     {
