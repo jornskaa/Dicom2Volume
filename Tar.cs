@@ -155,7 +155,7 @@ namespace Dicom2Volume
             inputStream.Close();
         }
 
-        public static void Create(string outputFilename, params string[] sourceFilenames)
+        public static string Create(string outputFilename, params string[] sourceFilenames)
         {
             var outputStream = File.Create(outputFilename);
             var mtime = (long)(DateTime.Now - _utcTime - TimeSpan.FromHours(1)).TotalSeconds;
@@ -176,8 +176,8 @@ namespace Dicom2Volume
                     LinkName = ToCharArray("", 100),
                     Magic = ToCharArray("ustar ", 6),
                     Version = ToCharArray(" ", 2),
-                    UName = ToCharArray("passion", 32),
-                    GName = ToCharArray("passion", 32),
+                    UName = ToCharArray("dcm2vol", 32),
+                    GName = ToCharArray("dcm2vol", 32),
                     DevMajor = ToCharArray("", 8),
                     DevMinor = ToCharArray("", 8),
                     Prefix = ToCharArray("", 155),
@@ -190,7 +190,7 @@ namespace Dicom2Volume
                 header.Checksum = ToCharArray(String.Format("{0:000000}\0 ", int.Parse(Convert.ToString(checksum, 8))), 8);
                 headerBytes = Utils.RawSerialize(header);
 
-                var sourceBytes = File.ReadAllBytes(sourceFilename);
+                var sourceBytes = File.ReadAllBytes(sourceFilename); // Todo:
                 outputStream.Write(headerBytes, 0, headerBytes.Length);
                 outputStream.Write(sourceBytes, 0, sourceBytes.Length);
 
@@ -200,6 +200,8 @@ namespace Dicom2Volume
 
             outputStream.Write(new byte[1024], 0, 1024);
             outputStream.Close();
+
+            return outputFilename;
         }
 
         public static Stream SkipToData(Stream stream, TarFileInfo fileInfo)

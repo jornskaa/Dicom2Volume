@@ -4,8 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Permissions;
-using System.Threading;
 using System.Windows.Forms;
+using System.Xml.Serialization;
 
 namespace Dicom2Volume
 {
@@ -15,14 +15,6 @@ namespace Dicom2Volume
         [STAThread]
         static void Main(string[] args)
         {
-            //Tar.Create(@"E:\tar\a.tar", @"E:\data\volume\phenix\dcm2vol\volume\volume.dds", @"E:\data\volume\phenix\dcm2vol\volume\volume.xml");
-            //GZip.Compress(@"E:\tar\a.tar", @"E:\tar\b.tar.gz");
-            //GZip.Decompress(@"E:\tar\b.tar.gz", @"E:\tar\c.tar");
-            //Tar.Untar(File.OpenRead(@"E:\tar\c.tar"), @"E:\tar\d\");
-            //var files = Tar.ListFileInfos(GZip.OpenRead(@"E:\tar\b.tar.gz"));
-            //Tar.Untar(GZip.OpenRead(@"E:\tar\b.tar.gz"), @"e:\tar\output");
-            //var file = Tar.SkipToData(GZip.OpenRead(@"E:\tar\b.tar.gz"), files.Values.First());
-            
             if (args.Length > 1)
             {
                 Logger.Warn("Too many arguments!");
@@ -30,6 +22,7 @@ namespace Dicom2Volume
                 Logger.Info("Check out dcm2vol.config for more configuration settings.");
             }
 
+            // List the DICOM files to be converted.
             var filenames = new string[0];
             if (args.Length == 1)
             {
@@ -47,16 +40,13 @@ namespace Dicom2Volume
                 return;
             }
 
-            if (filenames.Length == 0)
-            {
-                Logger.Warn("No files found in the specified directory!");
-                return;
-            }
-
-            // Delete output directory before recreating it.
+            // Delete the output directory if it should be cleaned up before conversion.
             var filename = filenames.First();
-            var directory = Path.GetDirectoryName(filename) ?? ".";
-            if (!Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.OutputPath))
+            var directory = Path.GetFullPath(Path.GetDirectoryName(filename) ?? ".");
+            Directory.SetCurrentDirectory(directory);
+
+            if (!Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.OutputPath) &&
+                Directory.Exists(Config.OutputPath))
             {
                 try
                 {
@@ -70,25 +60,28 @@ namespace Dicom2Volume
                 }
             }
 
-            // Perform the conversion.
-            Logger.Info("Converting every " + Config.SkipEveryNSlices + " slices of " + filenames.Length + " to XML and RAW file formats..");
-            var volumeData = Volume.Convert(Config.SkipEveryNSlices, filenames);
-            if (volumeData != null)
+            // Convert DICOM to XML slices and volume file formats as specified in app.config.
+            var sliceFilenames = Slices.ConvertDicom(Config.ImagesPath, filenames);
+            var sortedFilenames = Slices.Sort(Config.SortedPath, Config.SkipEveryNSlices, sliceFilenames.ToArray());
+            var volumeFilenames = Slices.CreateVolume(Config.VolumeOutputPath, Config.VolumeOutputName, sortedFilenames.ToArray());
+            var taredVolumeFilename = Tar.Create(Path.Combine(Config.VolumeOutputPath, Config.VolumeOutputName + "_raw.tar"), volumeFilenames.ToArray());
+            GZip.Compress(taredVolumeFilename, Path.Combine(Config.VolumeOutputPath, Config.VolumeOutputName + "_raw.tgz"));
+
+            using (var volumeDataStream = File.OpenRead(volumeFilenames[0]))
             {
-                Logger.Info("Converting RAW volume to DDS..");
-                Dds.ConvertRawToDds(Config.VolumePathRaw, volumeData.Columns, volumeData.Rows, volumeData.Slices, 
-                                    Config.VolumePathDds);
+                var volumeDataSerializer = new XmlSerializer(typeof(VolumeData));
+                var volumeData = (VolumeData)volumeDataSerializer.Deserialize(volumeDataStream);
+
+                var ddsVolumeFilename = Dds.ConvertRawToDds(volumeFilenames[1], volumeData.Columns, volumeData.Rows, volumeData.Slices, Path.Combine(Config.VolumeOutputPath, Config.VolumeOutputName + ".dds"));
+                var taredDdsFilename = Tar.Create(Path.Combine(Config.VolumeOutputPath, Config.VolumeOutputName + "_dds.tar"), new[] { volumeFilenames[0], ddsVolumeFilename });
+                GZip.Compress(taredDdsFilename, Path.Combine(Config.VolumeOutputPath, Config.VolumeOutputName + "_dds.tgz"));
             }
 
+            // Remove files not marked with keep flag.
             CleanupFiles();
 
-            // Open Window Explorer upon completion.
-            if (Config.OpenExplorerOnCompletion)
-            {
-
-                var argument = "/select, \"" + Path.Combine(directory, filename) + "\"";
-                Process.Start("explorer.exe", argument);
-            }
+            // Open output folder in Windows Explorer.
+            OpenWindowsExplorer(Path.Combine(directory, filename));
 
             Logger.Info("Done..");
             if (Config.WaitForEnterToExit)
@@ -120,7 +113,7 @@ namespace Dicom2Volume
                 }
             }
 
-            if (volumeFileCounter == 3) directories.Add(Config.VolumePath);
+            if (volumeFileCounter == 3) directories.Add(Config.VolumeOutputPath);
             if (!Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.Images)) directories.Add(Config.ImagesPath);
             if (!Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.SortedImages)) directories.Add(Config.SortedPath);
 
@@ -135,6 +128,14 @@ namespace Dicom2Volume
                     Logger.Error("Unable to delete " + directory + ". " + err.Message);
                 }
             }
+        }
+
+        private static void OpenWindowsExplorer(string path)
+        {
+            if (!Config.OpenExplorerOnCompletion) return;
+
+            var argument = "/select, \"" + path + "\"";
+            Process.Start("explorer.exe", argument);
         }
     }
 }

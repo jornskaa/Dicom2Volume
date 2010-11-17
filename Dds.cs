@@ -74,7 +74,7 @@ namespace Dicom2Volume
             public uint ABitMask;
         }
 
-        public static void ConvertRawToDds(string sourceFilename, int width, int height, int depth, string outputFilename)
+        public static string ConvertRawToDds(string sourceFilename, int width, int height, int depth, string outputFilename)
         {
             var header = new Header()
             {
@@ -119,6 +119,8 @@ namespace Dicom2Volume
             sourceStream.Close();
             writer.Close();
             outputStream.Close();
+
+            return outputFilename;
         }
 
         public struct Surface

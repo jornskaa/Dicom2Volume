@@ -32,14 +32,15 @@ namespace Dicom2Volume
         public static Logger.LogLevelType LogLevel { get; set; }
         public static KeepFilesFlags KeepFilesFlag { get; set; }
         public static bool WaitForEnterToExit { get; set; }
-        public static string VolumePath { get; set; }
+        public static string VolumeOutputPath { get; set; }
         public static string ImagesPath { get; set; }
         public static string SortedPath { get; set; }
+        public static string VolumeOutputName { get; set; }
         public static Dictionary<uint, ElementTag> DicomDictionary { get; set; }
 
-        public static string VolumePathDds { get { return Path.Combine(VolumePath, "volume.dds"); } }
-        public static string VolumePathRaw { get { return Path.Combine(VolumePath, "volume.raw"); } }
-        public static string VolumePathXml { get { return Path.Combine(VolumePath, "volume.xml"); } }
+        public static string VolumePathDds { get { return Path.Combine(VolumeOutputPath, "volume.dds"); } }
+        public static string VolumePathRaw { get { return Path.Combine(VolumeOutputPath, "volume.raw"); } }
+        public static string VolumePathXml { get { return Path.Combine(VolumeOutputPath, "volume.xml"); } }
 
         static Config()
         {
@@ -49,9 +50,10 @@ namespace Dicom2Volume
             KeepFilesFlag = (KeepFilesFlags)Enum.Parse(typeof(KeepFilesFlags), ConfigurationManager.AppSettings["KeepFilesFlag"] ?? "Images, SortedImages, VolumeXml, RawVolume, DdsVolume, OutputPath, CompressedDds, CompressedRaw");
             WaitForEnterToExit = bool.Parse(ConfigurationManager.AppSettings["WaitForEnterToExit"] ?? "false");
             OutputPath = ConfigurationManager.AppSettings["OutputPath"] ?? "dcm2dds";
-            VolumePath = Path.Combine(OutputPath, "volume");
+            VolumeOutputPath = Path.Combine(OutputPath, "volume");
             ImagesPath = Path.Combine(OutputPath, "images");
             SortedPath = Path.Combine(OutputPath, "sorted");
+            VolumeOutputName = ConfigurationManager.AppSettings["VolumeOutputName"] ?? "volume";
 
             DicomDictionary = new Dictionary<uint, ElementTag>();
             var section = DicomConfigSection.GetConfigSection();

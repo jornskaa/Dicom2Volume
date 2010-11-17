@@ -52,7 +52,6 @@
     <Compile Include="Logger.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Volume.cs" />
     <Compile Include="Slices.cs" />
     <Compile Include="Tar.cs" />
     <Compile Include="GZip.cs" />
