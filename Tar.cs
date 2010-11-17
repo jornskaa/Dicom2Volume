@@ -159,6 +159,7 @@ namespace Dicom2Volume
         {
             var outputStream = File.Create(outputFilename);
             var mtime = (long)(DateTime.Now - _utcTime - TimeSpan.FromHours(1)).TotalSeconds;
+            var buffer = new byte[512 * 512];
             
             foreach (var sourceFilename in sourceFilenames)
             {
@@ -189,10 +190,16 @@ namespace Dicom2Volume
                 var checksum = headerBytes.Aggregate(0, (current, t) => current + t);
                 header.Checksum = ToCharArray(String.Format("{0:000000}\0 ", int.Parse(Convert.ToString(checksum, 8))), 8);
                 headerBytes = Utils.RawSerialize(header);
-
-                var sourceBytes = File.ReadAllBytes(sourceFilename); // Todo:
                 outputStream.Write(headerBytes, 0, headerBytes.Length);
-                outputStream.Write(sourceBytes, 0, sourceBytes.Length);
+
+                using (var sourceStream = File.OpenRead(sourceFilename))
+                {
+                    while (sourceStream.Position < sourceStream.Length)
+                    {
+                        var readBytes = sourceStream.Read(buffer, 0, buffer.Length);
+                        outputStream.Write(buffer, 0, readBytes);
+                    }
+                }
 
                 var blockAlignBytes = (int)((512 - (outputStream.Position % 512)) % 512);
                 outputStream.Write(new byte[blockAlignBytes], 0, blockAlignBytes);
