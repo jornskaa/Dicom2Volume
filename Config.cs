@@ -16,44 +16,42 @@ namespace Dicom2Volume
         public enum KeepFilesFlags
         {
             None = 0,
-            Images = 1,
-            SortedImages = 2, 
-            VolumeXml = 4,
+            XmlImages = 1,
+            XmlImagesSorted = 2, 
+            XmlVolume = 4,
             RawVolume = 8,
             DdsVolume = 16,
-            OutputPath = 32,
-            CompressedDds = 64,
-            CompressedRaw = 128
+            TarRawVolume = 32,
+            TgzRawVolume = 64,
+            TarDdsVolume = 128,
+            TgzDdsVolume = 256,
+            OutputPath = 512,
         }
 
         public static int SkipEveryNSlices { get; set; }
         public static bool OpenExplorerOnCompletion { get; set; }
-        public static string OutputPath { get; set; }
         public static Logger.LogLevelType LogLevel { get; set; }
         public static KeepFilesFlags KeepFilesFlag { get; set; }
         public static bool WaitForEnterToExit { get; set; }
-        public static string VolumeOutputPath { get; set; }
-        public static string ImagesPath { get; set; }
-        public static string SortedPath { get; set; }
-        public static string VolumeOutputName { get; set; }
-        public static Dictionary<uint, ElementTag> DicomDictionary { get; set; }
 
-        public static string VolumePathDds { get { return Path.Combine(VolumeOutputPath, "volume.dds"); } }
-        public static string VolumePathRaw { get { return Path.Combine(VolumeOutputPath, "volume.raw"); } }
-        public static string VolumePathXml { get { return Path.Combine(VolumeOutputPath, "volume.xml"); } }
+        public static string RootDirectory { get; set; }
+        public static string RelativeXmlImagesOutputPath { get; set; }
+        public static string RelativeXmlImagesSortedOutputPath { get; set; }
+        public static string RelativeVolumeOutputPath { get; set; }
+        
+        public static Dictionary<uint, ElementTag> DicomDictionary { get; set; }
 
         static Config()
         {
             SkipEveryNSlices = int.Parse(ConfigurationManager.AppSettings["SkipEveryNSlices"] ?? "1");
             OpenExplorerOnCompletion = bool.Parse(ConfigurationManager.AppSettings["OpenExplorerOnCompletion"] ?? "true");
             LogLevel = (Logger.LogLevelType)Enum.Parse(typeof(Logger.LogLevelType), ConfigurationManager.AppSettings["LogLevel"] ?? "Info");
-            KeepFilesFlag = (KeepFilesFlags)Enum.Parse(typeof(KeepFilesFlags), ConfigurationManager.AppSettings["KeepFilesFlag"] ?? "Images, SortedImages, VolumeXml, RawVolume, DdsVolume, OutputPath, CompressedDds, CompressedRaw");
+            KeepFilesFlag = (KeepFilesFlags)Enum.Parse(typeof(KeepFilesFlags), ConfigurationManager.AppSettings["KeepFilesFlag"] ?? "Images, SortedImages, VolumeXml, RawVolume, DdsVolume, RelativeOutputPath, CompressedDds, CompressedRaw");
             WaitForEnterToExit = bool.Parse(ConfigurationManager.AppSettings["WaitForEnterToExit"] ?? "false");
-            OutputPath = ConfigurationManager.AppSettings["OutputPath"] ?? "dcm2dds";
-            VolumeOutputPath = Path.Combine(OutputPath, "volume");
-            ImagesPath = Path.Combine(OutputPath, "images");
-            SortedPath = Path.Combine(OutputPath, "sorted");
             VolumeOutputName = ConfigurationManager.AppSettings["VolumeOutputName"] ?? "volume";
+            RelativeVolumeOutputPath = Path.Combine(RelativeOutputPath, "dcm2vol/volume");
+            RelativeImagesOutputPath = Path.Combine(RelativeOutputPath, "dcm2vol/images");
+            RelativeImagesSortedOutputPath = Path.Combine(RelativeOutputPath, "dcm2vol/sorted");
 
             DicomDictionary = new Dictionary<uint, ElementTag>();
             var section = DicomConfigSection.GetConfigSection();

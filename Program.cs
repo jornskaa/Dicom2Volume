@@ -42,15 +42,15 @@ namespace Dicom2Volume
 
             // Delete the output directory if it should be cleaned up before conversion.
             var filename = filenames.First();
-            var directory = Path.GetFullPath(Path.GetDirectoryName(filename) ?? ".");
-            Directory.SetCurrentDirectory(directory);
+            var rootDirectory = Path.GetFullPath(Path.GetDirectoryName(filename) ?? ".");
+            //Directory.SetCurrentDirectory(rootDirectory);
 
             if (!Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.OutputPath) &&
                 Directory.Exists(Config.OutputPath))
             {
                 try
                 {
-                    var outputPathFull = Path.Combine(directory, Config.OutputPath);
+                    var outputPathFull = Path.Combine(rootDirectory, Config.OutputPath);
                     new FileIOPermission(FileIOPermissionAccess.AllAccess, outputPathFull).Demand();
                     Directory.Delete(outputPathFull, true);
                 }
@@ -61,27 +61,61 @@ namespace Dicom2Volume
             }
 
             // Convert DICOM to XML slices and volume file formats as specified in app.config.
-            var sliceFilenames = Slices.ConvertDicom(Config.ImagesPath, filenames);
-            var sortedFilenames = Slices.Sort(Config.SortedPath, Config.SkipEveryNSlices, sliceFilenames.ToArray());
+
+            Logger.Info("Converting DICOM to XML slices..");
+            var sliceFilenames = Slices.ConvertDicom(Config.ImagesOutputPath, filenames);
+
+            Logger.Info("Creating sorted XML slices based on slice location..");
+            var sortedFilenames = Slices.Sort(Config.ImagesSortedOutputPath, Config.SkipEveryNSlices, sliceFilenames.ToArray());
+
+            Logger.Info("Creating RAW volume from slices..");
             var volumeFilenames = Slices.CreateVolume(Config.VolumeOutputPath, Config.VolumeOutputName, sortedFilenames.ToArray());
-            var taredVolumeFilename = Tar.Create(Path.Combine(Config.VolumeOutputPath, Config.VolumeOutputName + "_raw.tar"), volumeFilenames.ToArray());
-            GZip.Compress(taredVolumeFilename, Path.Combine(Config.VolumeOutputPath, Config.VolumeOutputName + "_raw.tgz"));
+
+            if (Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.TarRawVolume) ||
+                Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.TgzRawVolume)) 
+            {
+                Logger.Info("Creating tar archive of RAW volume..");
+                var taredVolumeFilename = Tar.Create(Path.Combine(Config.VolumeOutputPath, Config.VolumeOutputName + "_raw.tar"), volumeFilenames.ToArray());
+
+                if (Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.TgzRawVolume))
+                {
+                    Logger.Info("Creating gzipped archive of RAW volume..");
+                    GZip.Compress(taredVolumeFilename, Path.Combine(Config.VolumeOutputPath, Config.VolumeOutputName + "_raw.tgz"));
+                }
+            }
 
             using (var volumeDataStream = File.OpenRead(volumeFilenames[0]))
             {
                 var volumeDataSerializer = new XmlSerializer(typeof(VolumeData));
                 var volumeData = (VolumeData)volumeDataSerializer.Deserialize(volumeDataStream);
 
-                var ddsVolumeFilename = Dds.ConvertRawToDds(volumeFilenames[1], volumeData.Columns, volumeData.Rows, volumeData.Slices, Path.Combine(Config.VolumeOutputPath, Config.VolumeOutputName + ".dds"));
-                var taredDdsFilename = Tar.Create(Path.Combine(Config.VolumeOutputPath, Config.VolumeOutputName + "_dds.tar"), new[] { volumeFilenames[0], ddsVolumeFilename });
-                GZip.Compress(taredDdsFilename, Path.Combine(Config.VolumeOutputPath, Config.VolumeOutputName + "_dds.tgz"));
+                if (Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.DdsVolume) ||
+                    Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.TarDdsVolume) ||
+                    Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.TgzDdsVolume))
+                {
+                    Logger.Info("Creating Direct Draw Surface (DDS) volume..");
+                    var ddsVolumeFilename = Dds.ConvertRawToDds(volumeFilenames[1], volumeData.Columns, volumeData.Rows, volumeData.Slices, Path.Combine(Config.VolumeOutputPath, Config.VolumeOutputName + ".dds"));
+
+                    if (Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.TarDdsVolume) ||
+                        Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.TgzDdsVolume))
+                    {
+                        Logger.Info("Creating tar archive of DDS volume..");
+                        var taredDdsFilename = Tar.Create(Path.Combine(Config.VolumeOutputPath, Config.VolumeOutputName + "_dds.tar"), new[] { volumeFilenames[0], ddsVolumeFilename });
+
+                        if (Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.TgzDdsVolume))
+                        {
+                            Logger.Info("Creating gzipped archive of DDS volume..");
+                            GZip.Compress(taredDdsFilename, Path.Combine(Config.VolumeOutputPath, Config.VolumeOutputName + "_dds.tgz"));
+                        }
+                    }
+                }
             }
 
             // Remove files not marked with keep flag.
             CleanupFiles();
 
             // Open output folder in Windows Explorer.
-            OpenWindowsExplorer(Path.Combine(directory, filename));
+            OpenWindowsExplorer(Path.Combine(rootDirectory, filename));
 
             Logger.Info("Done..");
             if (Config.WaitForEnterToExit)
@@ -95,10 +129,10 @@ namespace Dicom2Volume
             var volumeFiles = new List<string>();
             var directories = new List<string>();
 
-            int volumeFileCounter = 0;
+            var volumeFileCounter = 0;
             if (!Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.RawVolume)) volumeFiles.Add(Config.VolumePathRaw);
             if (!Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.DdsVolume)) volumeFiles.Add(Config.VolumePathDds);
-            if (!Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.VolumeXml)) volumeFiles.Add(Config.VolumePathXml);
+            if (!Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.XmlVolume)) volumeFiles.Add(Config.VolumePathXml);
 
             foreach (var file in volumeFiles)
             {
@@ -114,8 +148,8 @@ namespace Dicom2Volume
             }
 
             if (volumeFileCounter == 3) directories.Add(Config.VolumeOutputPath);
-            if (!Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.Images)) directories.Add(Config.ImagesPath);
-            if (!Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.SortedImages)) directories.Add(Config.SortedPath);
+            if (!Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.XmlImages)) directories.Add(Config.ImagesOutputPath);
+            if (!Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.XmlImagesSorted)) directories.Add(Config.ImagesSortedOutputPath);
 
             foreach (var directory in directories)
             {
