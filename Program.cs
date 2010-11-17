@@ -15,20 +15,19 @@ namespace Dicom2Volume
         [STAThread]
         static void Main(string[] args)
         {
-            //var tarFiles = Tar.ListFileInfos(File.OpenRead(@"E:\test.tar"));
             //Tar.Create(@"E:\tar\a.tar", @"E:\data\volume\phenix\dcm2vol\volume\volume.dds", @"E:\data\volume\phenix\dcm2vol\volume\volume.xml");
             //GZip.Compress(@"E:\tar\a.tar", @"E:\tar\b.tar.gz");
             //GZip.Decompress(@"E:\tar\b.tar.gz", @"E:\tar\c.tar");
             //Tar.Untar(File.OpenRead(@"E:\tar\c.tar"), @"E:\tar\d\");
             //var files = Tar.ListFileInfos(GZip.OpenRead(@"E:\tar\b.tar.gz"));
             //Tar.Untar(GZip.OpenRead(@"E:\tar\b.tar.gz"), @"e:\tar\output");
-            //var file = files.Values.First().OpenRead(GZip.OpenRead(@"E:\tar\b.tar.gz"));
+            //var file = Tar.SkipToData(GZip.OpenRead(@"E:\tar\b.tar.gz"), files.Values.First());
             
             if (args.Length > 1)
             {
                 Logger.Warn("Too many arguments!");
-                Logger.Info("Usage: dcm2dds [directory] - where directory contains your DICOM files.");
-                Logger.Info("Check out dcm2dds.config for more configuration settings.");
+                Logger.Info("Usage: dcm2vol [directory] - where directory contains your DICOM files.");
+                Logger.Info("Check out dcm2vol.config for more configuration settings.");
             }
 
             var filenames = new string[0];

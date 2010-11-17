@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Dicom2Volume
 {
@@ -19,19 +18,6 @@ namespace Dicom2Volume
         public DateTime Modified;
         public TarFiletype Type;
         public long Size;
-
-        public Stream OpenRead(Stream stream)
-        {
-            // Seek to the beginning of the tar file entry.
-            var buffer = new byte[512 * 512];
-            var bytesRemaining = Position;
-            while (bytesRemaining > 0)
-            {
-                bytesRemaining -= stream.Read(buffer, 0, (int)Math.Min(bytesRemaining, buffer.Length));
-            }
-
-            return stream;
-        }
     }
 
     public class Tar
@@ -109,12 +95,9 @@ namespace Dicom2Volume
 
                 // Skip contents of file and align to 512 byte chunk boundary.
                 var skipBytes = size + ((512 - ((position + size) % 512)) % 512);
-                var bytesLeft = skipBytes;
-                while (bytesLeft > 0)
-                {
-                    bytesLeft -= inputStream.Read(buffer, 0, (int)Math.Min(bytesLeft, buffer.Length));
-                }
+                Skip(inputStream, skipBytes);
                 position += skipBytes;
+
                 Logger.Debug("Listing file from tar(" + size + "): \"" + filename + "\"");
             }
 
@@ -164,11 +147,7 @@ namespace Dicom2Volume
 
                 // Align to 512 byte chunk boundary.
                 var skipBytes = (int) ((512 - (position % 512)) % 512);
-                var bytesRemaining = skipBytes;
-                while (bytesRemaining > 0)
-                {
-                    bytesRemaining -= inputStream.Read(buffer, 0, bytesRemaining);
-                }
+                Skip(inputStream, skipBytes);
                 position += skipBytes;
                 
                 Logger.Debug("Reading file from tar(" + size + "): \"" + filename + "\"");
@@ -221,6 +200,26 @@ namespace Dicom2Volume
 
             outputStream.Write(new byte[1024], 0, 1024);
             outputStream.Close();
+        }
+
+        public static Stream SkipToData(Stream stream, TarFileInfo fileInfo)
+        {
+            Skip(stream, fileInfo.Position);
+            return stream;
+        }
+
+        private static readonly byte[] SkipBuffer = new byte[512 * 512];
+
+        private static void Skip(Stream stream, long skipBytes)
+        {
+            lock (SkipBuffer)
+            {
+                var bytesRemaining = skipBytes;
+                while (bytesRemaining > 0)
+                {
+                    bytesRemaining -= stream.Read(SkipBuffer, 0, (int)Math.Min(bytesRemaining, SkipBuffer.Length));
+                }
+            }
         }
 
         private static string ToString(char[] chars)
