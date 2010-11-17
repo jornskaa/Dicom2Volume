@@ -214,13 +214,10 @@ namespace Dicom2Volume
 
         private static void Skip(Stream stream, long skipBytes)
         {
-            lock (SkipBuffer)
+            var bytesRemaining = skipBytes;
+            while (bytesRemaining > 0)
             {
-                var bytesRemaining = skipBytes;
-                while (bytesRemaining > 0)
-                {
-                    bytesRemaining -= stream.Read(SkipBuffer, 0, (int)Math.Min(bytesRemaining, SkipBuffer.Length));
-                }
+                bytesRemaining -= stream.Read(SkipBuffer, 0, (int)Math.Min(bytesRemaining, SkipBuffer.Length));
             }
         }
 

@@ -35,9 +35,31 @@ namespace Dicom2Volume
         public static bool WaitForEnterToExit { get; set; }
 
         public static string RootDirectory { get; set; }
-        public static string RelativeXmlImagesOutputPath { get; set; }
-        public static string RelativeXmlImagesSortedOutputPath { get; set; }
-        public static string RelativeVolumeOutputPath { get; set; }
+        public static string RelativeOutputPath { get; set; }
+        public static string RelativeXmlImagesOutputPath = "images";
+        public static string RelativeXmlImagesSortedOutputPath = "sorted";
+        public static string RelativeVolumeOutputPath = "volume";
+        public static string VolumeOutputName = "volume";
+
+        public static string FullOutputPath
+        {
+            get { return Path.Combine(RootDirectory, RelativeOutputPath); }
+        }
+
+        public static string FullXmlImagesOutputPath
+        {
+            get { return Path.Combine(FullOutputPath, RelativeXmlImagesOutputPath); }
+        }
+
+        public static string FullXmlImagesSortedOutputPath
+        {
+            get { return Path.Combine(FullOutputPath, RelativeXmlImagesSortedOutputPath); }
+        }
+
+        public static string FullVolumeOutputPath
+        {
+            get { return Path.Combine(FullOutputPath, RelativeVolumeOutputPath); }
+        }
         
         public static Dictionary<uint, ElementTag> DicomDictionary { get; set; }
 
@@ -48,10 +70,7 @@ namespace Dicom2Volume
             LogLevel = (Logger.LogLevelType)Enum.Parse(typeof(Logger.LogLevelType), ConfigurationManager.AppSettings["LogLevel"] ?? "Info");
             KeepFilesFlag = (KeepFilesFlags)Enum.Parse(typeof(KeepFilesFlags), ConfigurationManager.AppSettings["KeepFilesFlag"] ?? "Images, SortedImages, VolumeXml, RawVolume, DdsVolume, RelativeOutputPath, CompressedDds, CompressedRaw");
             WaitForEnterToExit = bool.Parse(ConfigurationManager.AppSettings["WaitForEnterToExit"] ?? "false");
-            VolumeOutputName = ConfigurationManager.AppSettings["VolumeOutputName"] ?? "volume";
-            RelativeVolumeOutputPath = Path.Combine(RelativeOutputPath, "dcm2vol/volume");
-            RelativeImagesOutputPath = Path.Combine(RelativeOutputPath, "dcm2vol/images");
-            RelativeImagesSortedOutputPath = Path.Combine(RelativeOutputPath, "dcm2vol/sorted");
+            RelativeOutputPath = ConfigurationManager.AppSettings["RelativeOutputPath"] ?? "dcm2vol";
 
             DicomDictionary = new Dictionary<uint, ElementTag>();
             var section = DicomConfigSection.GetConfigSection();

@@ -5,7 +5,7 @@ namespace Dicom2Volume
 {
     public class GZip
     {
-        public static void Compress(string sourceFilename, string outputFilename)
+        public static string Compress(string sourceFilename, string outputFilename)
         {
             using (var inFile = File.OpenRead(sourceFilename))
             {
@@ -17,6 +17,8 @@ namespace Dicom2Volume
                     }
                 }
             }
+
+            return outputFilename;
         }
 
         public static void Decompress(string sourceFilename, string outputFilename)
