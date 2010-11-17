@@ -23,8 +23,6 @@ namespace Dicom2Volume
         {
             using (var inFile = File.OpenRead(sourceFilename))
             {
-                //var curFile = new FileInfo(sourceFilename);
-                //var origName = sourceFilename.Remove(sourceFilename.Length - curFile.Extension.Length);
                 using (var outFile = File.Create(outputFilename))
                 {
                     using (var decompress = new GZipStream(inFile, CompressionMode.Decompress))
@@ -33,6 +31,11 @@ namespace Dicom2Volume
                     }
                 }
             }
+        }
+
+        public static Stream OpenRead(string filename)
+        {
+            return new GZipStream(File.OpenRead(filename), CompressionMode.Decompress);
         }
     }
 }

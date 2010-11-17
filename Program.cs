@@ -20,6 +20,9 @@ namespace Dicom2Volume
             //GZip.Compress(@"E:\tar\a.tar", @"E:\tar\b.tar.gz");
             //GZip.Decompress(@"E:\tar\b.tar.gz", @"E:\tar\c.tar");
             //Tar.Untar(File.OpenRead(@"E:\tar\c.tar"), @"E:\tar\d\");
+            //var files = Tar.ListFileInfos(GZip.OpenRead(@"E:\tar\b.tar.gz"));
+            //Tar.Untar(GZip.OpenRead(@"E:\tar\b.tar.gz"), @"e:\tar\output");
+            //var file = files.Values.First().OpenRead(GZip.OpenRead(@"E:\tar\b.tar.gz"));
             
             if (args.Length > 1)
             {

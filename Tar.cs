@@ -18,12 +18,18 @@ namespace Dicom2Volume
         public long Position;
         public DateTime Modified;
         public TarFiletype Type;
-        public int Size;
+        public long Size;
 
-        public Stream OpenRead()
+        public Stream OpenRead(Stream stream)
         {
-            var stream = File.OpenRead(Filename);
-            stream.Seek(Position, SeekOrigin.Begin);
+            // Seek to the beginning of the tar file entry.
+            var buffer = new byte[512 * 512];
+            var bytesRemaining = Position;
+            while (bytesRemaining > 0)
+            {
+                bytesRemaining -= stream.Read(buffer, 0, (int)Math.Min(bytesRemaining, buffer.Length));
+            }
+
             return stream;
         }
     }
@@ -71,17 +77,20 @@ namespace Dicom2Volume
 
         public static Dictionary<string, TarFileInfo> ListFileInfos(Stream inputStream)
         {
+            long position = 0;
+            var buffer = new byte[512 * 512];
             var output = new Dictionary<string, TarFileInfo>();
 
-            while (inputStream.Position < inputStream.Length)
+            while (true)
             {
                 var header = Utils.ReadStruct<Header>(inputStream);
                 var magic = ToString(header.Magic);
+                position += 512;
 
                 if (magic != "ustar ") break;
 
                 var filename = ToString(header.Prefix) + ToString(header.Name);
-                var size = Convert.ToInt32(ToString(header.Size), 8);
+                var size = Convert.ToInt64(ToString(header.Size), 8);
 
                 switch (header.TypeFlag)
                 {
@@ -90,7 +99,7 @@ namespace Dicom2Volume
                         output[filename] = new TarFileInfo
                         {
                             Filename = filename,
-                            Position = inputStream.Position,
+                            Position = position,
                             Modified = _utcTime.AddSeconds((Convert.ToInt64(ToString(header.MTime), 8))),
                             Type = (header.TypeFlag == '0') ? TarFiletype.File : TarFiletype.Directory,
                             Size = size
@@ -99,7 +108,13 @@ namespace Dicom2Volume
                 }
 
                 // Skip contents of file and align to 512 byte chunk boundary.
-                inputStream.Seek(size + (int)((512 - (inputStream.Position % 512)) % 512), SeekOrigin.Current);
+                var skipBytes = size + ((512 - ((position + size) % 512)) % 512);
+                var bytesLeft = skipBytes;
+                while (bytesLeft > 0)
+                {
+                    bytesLeft -= inputStream.Read(buffer, 0, (int)Math.Min(bytesLeft, buffer.Length));
+                }
+                position += skipBytes;
                 Logger.Debug("Listing file from tar(" + size + "): \"" + filename + "\"");
             }
 
@@ -110,15 +125,19 @@ namespace Dicom2Volume
 
         public static void Untar(Stream inputStream, string outputDirectory)
         {
+            long position = 0;
             var buffer = new byte[512 * 512];
-            while (inputStream.Position < inputStream.Length)
+
+            while (true)
             {
                 var header = Utils.ReadStruct<Header>(inputStream);
                 var magic = ToString(header.Magic);
+                position += 512;
+
                 if (magic != "ustar ") break;
 
                 var filename = ToString(header.Prefix) + ToString(header.Name);
-                var size = Convert.ToInt32(ToString(header.Size), 8);
+                var size = Convert.ToInt64(ToString(header.Size), 8);
 
                 if (header.TypeFlag == '0') // Regular file.
                 {
@@ -131,11 +150,12 @@ namespace Dicom2Volume
                     var bytesLeft = size;
                     while (bytesLeft > 0)
                     {
-                        var byteReadCount = inputStream.Read(buffer, 0, Math.Min(bytesLeft, buffer.Length));
+                        var byteReadCount = inputStream.Read(buffer, 0, (int)Math.Min(bytesLeft, buffer.Length));
                         outputStream.Write(buffer, 0, byteReadCount);
                         bytesLeft -= byteReadCount;
                     }
                     outputStream.Close();
+                    position += size;
                 }
                 else if (header.TypeFlag == '5') // Directory.
                 {
@@ -143,7 +163,14 @@ namespace Dicom2Volume
                 }
 
                 // Align to 512 byte chunk boundary.
-                inputStream.Seek((int)((512 - (inputStream.Position % 512)) % 512), SeekOrigin.Current);
+                var skipBytes = (int) ((512 - (position % 512)) % 512);
+                var bytesRemaining = skipBytes;
+                while (bytesRemaining > 0)
+                {
+                    bytesRemaining -= inputStream.Read(buffer, 0, bytesRemaining);
+                }
+                position += skipBytes;
+                
                 Logger.Debug("Reading file from tar(" + size + "): \"" + filename + "\"");
             }
             inputStream.Close();
@@ -164,7 +191,7 @@ namespace Dicom2Volume
                     Mode = ToCharArray("0000644", 8),
                     Uid = ToCharArray("0000764", 8),
                     Gid = ToCharArray("0000764", 8),
-                    Size = ToCharArray(String.Format("{0:00000000000}", int.Parse(Convert.ToString(fileInfo.Length, 8))), 12),
+                    Size = ToCharArray(String.Format("{0:00000000000}", long.Parse(Convert.ToString(fileInfo.Length, 8))), 12),
                     MTime = ToCharArray(Convert.ToString(mtime, 8), 12),
                     Checksum = ToCharArray(new string(' ', 8), 8),
                     LinkName = ToCharArray("", 100),
