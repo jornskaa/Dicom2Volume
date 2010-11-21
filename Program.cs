@@ -60,8 +60,12 @@ namespace Dicom2Volume
             // Convert DICOM to XML slices and volume file formats as specified in app.config.
             var cleanupFiles = new List<string>();
 
+            Logger.Info("Ensuring DICOM is decompressed, little endian and explicit VR.");
+            var dcmdFilenames = Dcmtk.DecompressLittleEndianExplicitVr(Config.FullDcmdjpegOutputPath, filenames);
+            if (!Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.Dcmdjpeg)) cleanupFiles.AddRange(dcmdFilenames);
+
             Logger.Info("Converting DICOM to XML slices..");
-            var sliceFilenames = Slices.ConvertDicom(Config.FullXmlImagesOutputPath, filenames);
+            var sliceFilenames = Slices.ConvertDicom(Config.FullXmlImagesOutputPath, dcmdFilenames.ToArray());
             if (!Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.XmlImages)) cleanupFiles.AddRange(sliceFilenames);
 
             Logger.Info("Creating sorted XML slices based on slice location..");
@@ -143,6 +147,12 @@ namespace Dicom2Volume
                 {
                     Logger.Error("Unable to delete " + file + ". " + err.Message);
                 }
+            }
+
+            if (Directory.Exists(Config.FullDcmdjpegOutputPath) &&
+                Directory.GetFiles(Config.FullDcmdjpegOutputPath).Length == 0)
+            {
+                Directory.Delete(Config.FullDcmdjpegOutputPath);
             }
 
             if (Directory.Exists(Config.FullVolumeOutputPath) && 

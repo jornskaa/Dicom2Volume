@@ -40,7 +40,7 @@ namespace Dicom2Volume
     // Ref: http://msdn.microsoft.com/en-us/library/bb943991(v=VS.85).aspx
     public class Dds
     {
-        public const uint MagicWord = 0x20534444;
+        public static byte[] MagicBytes = new byte[] { 0x44, 0x44, 0x53, 0x20 }; // MagicWord: 0x20534444;
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct Header
@@ -100,25 +100,23 @@ namespace Dicom2Volume
                 CubemapFlag = CubeMapFlags.Caps2Volume,
             };
 
-            var outputStream = File.Create(outputFilename);
-            var writer = new BinaryWriter(outputStream);
-
-            writer.Write(MagicWord);
-            writer.Write(Utils.RawSerialize(header));
-            var sourceStream = File.OpenRead(sourceFilename);
-            var readerStream = new BinaryReader(sourceStream);
-
-            // Read/write one slice at a time.
-            for (var i = 0; i < depth; i++)
+            using (var outputStream = File.Create(outputFilename))
             {
-                var pixelData = readerStream.ReadBytes(width * height * 2);
-                writer.Write(pixelData);
-            }
+                var headerBytes = Utils.RawSerialize(header);
+                outputStream.Write(MagicBytes, 0, MagicBytes.Length);
+                outputStream.Write(headerBytes, 0, headerBytes.Length);
 
-            readerStream.Close();
-            sourceStream.Close();
-            writer.Close();
-            outputStream.Close();
+                var byteBuffer = new byte[512 * 512];
+                using (var sourceStream = File.OpenRead(sourceFilename))
+                {
+                    int rawDataLength = width * height * depth * 2;
+                    while (sourceStream.Position < rawDataLength)
+                    {
+                        var read = sourceStream.Read(byteBuffer, 0, byteBuffer.Length);
+                        outputStream.Write(byteBuffer, 0, read);
+                    }
+                }
+            }
 
             return outputFilename;
         }
@@ -131,29 +129,28 @@ namespace Dicom2Volume
 
         public static Surface OpenRead(string filename)
         {
-            var fileStream = File.OpenRead(filename);
-            var reader = new BinaryReader(fileStream);
+            var inputStream = File.OpenRead(filename);
 
-            var magic = reader.ReadUInt32();
-            if (magic != MagicWord)
+            // Check magic header bytes.
+            for (int i = 0; i < MagicBytes.Length; i++)
             {
-                reader.Close();
-                fileStream.Close();
-                throw new IOException("Unable to find DDS magic word in beginning of file!");
+                var magicByte = inputStream.ReadByte();
+                if (MagicBytes[i] != magicByte)
+                {
+                    inputStream.Close();
+                    throw new IOException("Unable to find DDS magic word in beginning of file!");
+                }
             }
 
-            var output = new Surface 
+            var output = new Surface
             {
-                Info = Utils.ReadStruct<Header>(fileStream), 
-                PixelDataStream = fileStream
+                Info = Utils.ReadStruct<Header>(inputStream),
+                PixelDataStream = inputStream
             };
-
-            reader.Close();
-            fileStream.Close();
 
             if (output.Info.Format.FourCc != 0)
             {
-                output.PixelDataStream.Close();
+                inputStream.Close();
                 throw new IOException("DX10 Header is not supported!");
             }
 

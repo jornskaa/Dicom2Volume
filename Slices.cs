@@ -261,7 +261,7 @@ namespace Dicom2Volume
             }
 
             var element = dataset[Dicom.ReverseDictionary["PhotometricInterpretation"]];
-            var pi = element.Value[0].Text;
+            var pi = element.Value[0].Text.Trim();
             if (pi != "MONOCHROME2")
             {
                 Logger.Warn("Unable to convert DICOM other than MONOCHROME2: " + pi);
@@ -273,7 +273,7 @@ namespace Dicom2Volume
 
         public static List<string> CreateVolume(string outputDirectory, string outputName, params string[] sortedInputSliceFilenames)
         {
-            var volumeData = new VolumeData();
+            var volumeMetadata = new VolumeData();
             var imageSerializer = new XmlSerializer(typeof(ImageData));
             var volumeSerializer = new XmlSerializer(typeof (VolumeData));
 
@@ -294,22 +294,22 @@ namespace Dicom2Volume
                         volumeRawStream.Write(imageData.PixelData, 0, imageData.PixelData.Length);
                         if (sliceCount == 0) // Use first slice as reference slice for volume.
                         {
-                            volumeData.FirstSliceLocation = imageData.SliceLocation;
-                            volumeData.Columns = imageData.Columns;
-                            volumeData.Rows = imageData.Rows;
-                            volumeData.Height = imageData.Height;
-                            volumeData.Width = imageData.Width;
-                            volumeData.ImageOrientationPatient = imageData.ImageOrientationPatient;
-                            volumeData.ImagePositionPatient = imageData.ImagePositionPatient;
-                            volumeData.RescaleIntercept = imageData.RescaleIntercept;
-                            volumeData.RescaleSlope = imageData.RescaleSlope;
-                            volumeData.WindowCenter = imageData.WindowCenter;
-                            volumeData.WindowWidth = imageData.WindowWidth;
+                            volumeMetadata.FirstSliceLocation = imageData.SliceLocation;
+                            volumeMetadata.Columns = imageData.Columns;
+                            volumeMetadata.Rows = imageData.Rows;
+                            volumeMetadata.Height = imageData.Height;
+                            volumeMetadata.Width = imageData.Width;
+                            volumeMetadata.ImageOrientationPatient = imageData.ImageOrientationPatient;
+                            volumeMetadata.ImagePositionPatient = imageData.ImagePositionPatient;
+                            volumeMetadata.RescaleIntercept = imageData.RescaleIntercept;
+                            volumeMetadata.RescaleSlope = imageData.RescaleSlope;
+                            volumeMetadata.WindowCenter = imageData.WindowCenter;
+                            volumeMetadata.WindowWidth = imageData.WindowWidth;
                         }
 
-                        volumeData.MinIntensity = Math.Min(volumeData.MinIntensity, imageData.MinIntensity);
-                        volumeData.MaxIntensity = Math.Max(volumeData.MaxIntensity, imageData.MaxIntensity);
-                        volumeData.LastSliceLocation = imageData.SliceLocation;
+                        volumeMetadata.MinIntensity = Math.Min(volumeMetadata.MinIntensity, imageData.MinIntensity);
+                        volumeMetadata.MaxIntensity = Math.Max(volumeMetadata.MaxIntensity, imageData.MaxIntensity);
+                        volumeMetadata.LastSliceLocation = imageData.SliceLocation;
                         sliceCount++;
 
                     }
@@ -321,12 +321,12 @@ namespace Dicom2Volume
             }
             volumeRawStream.Close();
 
-            volumeData.Depth = Math.Abs(volumeData.LastSliceLocation - volumeData.FirstSliceLocation);
-            volumeData.Slices = sliceCount;
+            volumeMetadata.Depth = Math.Abs(volumeMetadata.LastSliceLocation - volumeMetadata.FirstSliceLocation);
+            volumeMetadata.Slices = sliceCount;
 
             var volumeXmlFilename = Path.Combine(outputDirectory, outputName + ".xml");
             var volumeXmlStream = File.Create(volumeXmlFilename);
-            volumeSerializer.Serialize(volumeXmlStream, volumeData);
+            volumeSerializer.Serialize(volumeXmlStream, volumeMetadata);
             volumeXmlStream.Close();
 
             return new List<string> { volumeXmlFilename, volumeRawFilename };

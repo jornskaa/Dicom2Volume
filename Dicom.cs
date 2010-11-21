@@ -183,13 +183,21 @@ namespace Dicom2Volume
 
         private static Value[] ReadBytes(ReaderState state)
         {
+            byte[] data = null;
             if (!state.IsImplicitVr)
             {
                 state.Reader.ReadBytes(2);
             }
 
             var length = state.Reader.ReadUInt32();
-            var data = state.Reader.ReadBytes((int)length);
+            if (length == 0xffffffff) // Check for compressed data.
+            {
+                throw new IOException("Unable to read compressed data. Please convert using dcmdjpeg.exe");
+            }
+            else
+            {
+                data = state.Reader.ReadBytes((int)length);
+            }
 
             return new[] { new Value { Bytes = data } };
         }
@@ -220,7 +228,8 @@ namespace Dicom2Volume
             Element element;
             string elementName;
             var items = new List<Element>();
-            state.Reader.ReadUInt32(); // Length - not used.
+            var length = state.Reader.ReadUInt32();
+            var endItemPosition = length + state.Reader.BaseStream.Position;
 
             do
             {
@@ -231,7 +240,8 @@ namespace Dicom2Volume
                 elementName = (element.Tag != null) ? element.Tag.Name : null;
                 items.Add(element);
 
-            } while (elementName != "ItemDelimitationItem");
+            } while (elementName != "ItemDelimitationItem" &&
+                state.Reader.BaseStream.Position < endItemPosition);
 
             return new[] { new Value { Items = items } };
         }
