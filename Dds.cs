@@ -1,5 +1,5 @@
 ﻿// ****************************************************************************************
-// Copyright (C) 2010, Jørn Skaarud Karlsen 
+// Copyright (C) 2010, Jorn Skaarud Karlsen 
 // All rights reserved. 
 //
 // Redistribution and use in source and binary forms, with or without modification, are 

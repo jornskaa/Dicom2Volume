@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Dicom2Volume")]
 [assembly: AssemblyDescription("Converts from DICOM images to XML, raw volume and DDS volume files and metadata.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Jørn Skaarud Karlsen")]
+[assembly: AssemblyCompany("Jorn Skaarud Karlsen")]
 [assembly: AssemblyProduct("dcm2vol")]
-[assembly: AssemblyCopyright("Jørn Skaarud Karlsen")]
+[assembly: AssemblyCopyright("Jorn Skaarud Karlsen")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
