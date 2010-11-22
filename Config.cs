@@ -53,7 +53,7 @@ namespace Dicom2Volume
             TarDdsVolume = 128,
             TgzDdsVolume = 256,
             OutputPath = 512,
-            Dcmdjpeg = 1024
+            ExtConv = 1024
         }
 
         public static int SkipEveryNSlices { get; set; }
@@ -69,7 +69,7 @@ namespace Dicom2Volume
         public static string RelativeXmlImagesOutputPath = "images";
         public static string RelativeXmlImagesSortedOutputPath = "sorted";
         public static string RelativeVolumeOutputPath = "volume";
-        public static string RelativeDcmdjpegOutputPath = "dcmdjpeg";
+        public static string RelativeExtConvOutputPath = "extconv";
         public static string VolumeOutputName = "volume";
 
         public static string FullOutputPath
@@ -92,9 +92,9 @@ namespace Dicom2Volume
             get { return Path.Combine(FullOutputPath, RelativeVolumeOutputPath); }
         }
 
-        public static string FullDcmdjpegOutputPath 
+        public static string FullExtConvOutputPath 
         {
-            get { return Path.Combine(FullOutputPath, RelativeDcmdjpegOutputPath); }
+            get { return Path.Combine(FullOutputPath, RelativeExtConvOutputPath); }
         }
         
         public static Dictionary<uint, ElementTag> DicomDictionary { get; set; }

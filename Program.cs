@@ -91,8 +91,8 @@ namespace Dicom2Volume
             if (!String.IsNullOrEmpty(Config.DicomConverter))
             {
                 Logger.Info("Ensuring DICOM is decompressed, little endian and explicit VR.");
-                convertedFilenames = ExtDcmConv.Convert(Config.FullDcmdjpegOutputPath, filenames).ToArray();
-                if (!Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.Dcmdjpeg)) cleanupFiles.AddRange(convertedFilenames);
+                convertedFilenames = ExtDcmConv.Convert(Config.FullExtConvOutputPath, filenames).ToArray();
+                if (!Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.ExtConv)) cleanupFiles.AddRange(convertedFilenames);
             }
 
             Logger.Info("Converting DICOM to XML slices..");
@@ -180,10 +180,10 @@ namespace Dicom2Volume
                 }
             }
 
-            if (Directory.Exists(Config.FullDcmdjpegOutputPath) &&
-                Directory.GetFiles(Config.FullDcmdjpegOutputPath).Length == 0)
+            if (Directory.Exists(Config.FullExtConvOutputPath) &&
+                Directory.GetFiles(Config.FullExtConvOutputPath).Length == 0)
             {
-                Directory.Delete(Config.FullDcmdjpegOutputPath);
+                Directory.Delete(Config.FullExtConvOutputPath);
             }
 
             if (Directory.Exists(Config.FullVolumeOutputPath) && 
