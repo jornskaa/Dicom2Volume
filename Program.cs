@@ -87,12 +87,16 @@ namespace Dicom2Volume
             // Convert DICOM to XML slices and volume file formats as specified in app.config.
             var cleanupFiles = new List<string>();
 
-            Logger.Info("Ensuring DICOM is decompressed, little endian and explicit VR.");
-            var dcmdFilenames = Dcmtk.DecompressLittleEndianExplicitVr(Config.FullDcmdjpegOutputPath, filenames);
-            if (!Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.Dcmdjpeg)) cleanupFiles.AddRange(dcmdFilenames);
+            var convertedFilenames = filenames;
+            if (!String.IsNullOrEmpty(Config.DicomConverter))
+            {
+                Logger.Info("Ensuring DICOM is decompressed, little endian and explicit VR.");
+                convertedFilenames = ExtDcmConv.Convert(Config.FullDcmdjpegOutputPath, filenames).ToArray();
+                if (!Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.Dcmdjpeg)) cleanupFiles.AddRange(convertedFilenames);
+            }
 
             Logger.Info("Converting DICOM to XML slices..");
-            var sliceFilenames = Slices.ConvertDicom(Config.FullXmlImagesOutputPath, dcmdFilenames.ToArray());
+            var sliceFilenames = Slices.ConvertDicom(Config.FullXmlImagesOutputPath, convertedFilenames.ToArray());
             if (!Config.KeepFilesFlag.HasFlag(Config.KeepFilesFlags.XmlImages)) cleanupFiles.AddRange(sliceFilenames);
 
             Logger.Info("Creating sorted XML slices based on slice location..");

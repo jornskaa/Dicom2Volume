@@ -52,6 +52,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
     <ManifestCertificateThumbprint>EA33DD800384BDA3D7DDCAC808C867A279653D02</ManifestCertificateThumbprint>
@@ -81,6 +82,7 @@
     <Compile Include="Dcmtk.cs" />
     <Compile Include="Dds.cs" />
     <Compile Include="Dicom.cs" />
+    <Compile Include="ExtDcmConv.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -117,9 +119,6 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="dcmdjpeg.exe">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <Content Include="LICENSE.txt" />
     <Content Include="README.txt" />
   </ItemGroup>

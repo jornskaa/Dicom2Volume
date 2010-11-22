@@ -62,6 +62,8 @@ namespace Dicom2Volume
         public static KeepFilesFlags KeepFilesFlag { get; set; }
         public static bool WaitForEnterToExit { get; set; }
 
+        public static string DicomConverter { get; set; }
+        public static string DicomConverterArguments { get; set; }
         public static string RootDirectory { get; set; }
         public static string RelativeOutputPath { get; set; }
         public static string RelativeXmlImagesOutputPath = "images";
@@ -105,6 +107,8 @@ namespace Dicom2Volume
             KeepFilesFlag = (KeepFilesFlags)Enum.Parse(typeof(KeepFilesFlags), ConfigurationManager.AppSettings["KeepFilesFlag"] ?? "Images, SortedImages, VolumeXml, RawVolume, DdsVolume, RelativeOutputPath, CompressedDds, CompressedRaw");
             WaitForEnterToExit = bool.Parse(ConfigurationManager.AppSettings["WaitForEnterToExit"] ?? "false");
             RelativeOutputPath = ConfigurationManager.AppSettings["RelativeOutputPath"] ?? "dcm2vol";
+            DicomConverter = ConfigurationManager.AppSettings["DicomConverter"];
+            DicomConverterArguments = ConfigurationManager.AppSettings["DicomConverterArguments"];
 
             DicomDictionary = new Dictionary<uint, ElementTag>();
             var section = DicomConfigSection.GetConfigSection();
