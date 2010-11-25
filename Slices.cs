@@ -308,6 +308,8 @@ namespace Dicom2Volume
 
             var volumeRawFilename = Path.Combine(outputDirectory, outputName + ".raw");
             var volumeRawStream = File.Create(volumeRawFilename);
+            var firstSlicePosition = new[] { 0.0, 0.0, 0.0 };
+            var lastSlicePosition = new[] { 0.0, 0.0, 0.0 };
             var sliceCount = 0;
 
             foreach (var inputFilename in sortedInputSliceFilenames)
@@ -316,18 +318,17 @@ namespace Dicom2Volume
                 {
                     using (var inputStream = File.OpenRead(inputFilename))
                     {
-
                         var imageData = (ImageData) imageSerializer.Deserialize(inputStream);
                         volumeRawStream.Write(imageData.PixelData, 0, imageData.PixelData.Length);
                         if (sliceCount == 0) // Use first slice as reference slice for volume.
                         {
+                            firstSlicePosition = imageData.ImagePositionPatient;
                             volumeMetadata.FirstSliceLocation = imageData.SliceLocation;
                             volumeMetadata.Columns = imageData.Columns;
                             volumeMetadata.Rows = imageData.Rows;
                             volumeMetadata.Height = imageData.Height;
                             volumeMetadata.Width = imageData.Width;
                             volumeMetadata.ImageOrientationPatient = imageData.ImageOrientationPatient;
-                            volumeMetadata.ImagePositionPatient = imageData.ImagePositionPatient;
                             volumeMetadata.RescaleIntercept = imageData.RescaleIntercept;
                             volumeMetadata.RescaleSlope = imageData.RescaleSlope;
                             volumeMetadata.WindowCenter = imageData.WindowCenter;
@@ -337,6 +338,7 @@ namespace Dicom2Volume
                         volumeMetadata.MinIntensity = Math.Min(volumeMetadata.MinIntensity, imageData.MinIntensity);
                         volumeMetadata.MaxIntensity = Math.Max(volumeMetadata.MaxIntensity, imageData.MaxIntensity);
                         volumeMetadata.LastSliceLocation = imageData.SliceLocation;
+                        lastSlicePosition = imageData.ImagePositionPatient;
                         sliceCount++;
 
                     }
@@ -350,6 +352,12 @@ namespace Dicom2Volume
 
             volumeMetadata.Depth = Math.Abs(volumeMetadata.LastSliceLocation - volumeMetadata.FirstSliceLocation);
             volumeMetadata.Slices = sliceCount;
+            volumeMetadata.ImagePositionPatient = new[] 
+            { 
+                (lastSlicePosition[0] + firstSlicePosition[0]) / 2.0, 
+                (lastSlicePosition[1] + firstSlicePosition[1]) / 2.0, 
+                (lastSlicePosition[2] + firstSlicePosition[2]) / 2.0 
+            };
 
             var volumeXmlFilename = Path.Combine(outputDirectory, outputName + ".xml");
             var volumeXmlStream = File.Create(volumeXmlFilename);

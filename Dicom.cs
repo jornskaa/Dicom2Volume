@@ -219,7 +219,7 @@ namespace Dicom2Volume
             var length = state.Reader.ReadUInt32();
             if (length == 0xffffffff) // Check for compressed data.
             {
-                throw new IOException("Unable to read compressed data. Please convert using dcmdjpeg.exe");
+                throw new IOException("Unable to read compressed data. Use external converter!");
             }
             else
             {

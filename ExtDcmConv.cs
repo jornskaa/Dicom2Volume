@@ -48,7 +48,6 @@ namespace Dicom2Volume
                 var outputFilename = Path.Combine(outputDirectory, Path.GetFileName(inputFilename));
                 var process = new Process
                 {
-                    // dcmdjpeg arguments default to explicit VR, little endian, decompressed - perfect!
                     StartInfo = new ProcessStartInfo()
                     {
                         FileName = Config.DicomConverter.Replace("$(StartupPath)", Application.StartupPath),
@@ -59,7 +58,7 @@ namespace Dicom2Volume
 
                 if (!process.Start())
                 {
-                    throw new IOException("Unable to execute dcmdjpeg.exe!");
+                    throw new IOException("Unable to execute external converter!");
                 }
 
                 process.WaitForExit();

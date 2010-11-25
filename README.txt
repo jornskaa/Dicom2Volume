@@ -49,3 +49,22 @@ of the DICOM dataset. Currently only MONOCHROME2 Photometric Interpretation is s
 However decompression is supported through external converters like dcmtk and gdcm. The 
 process also anonymizes the data by ignoring all tags not relating to rendering.
 ****************************************************************************************
+
+Configuration options are found in dcm2vol.exe.config. Here is an example config with
+commented out sections showing how external DICOM converters could be integrated.
+
+
+  <appSettings>
+    <add key="RelativeOutputPath" value="dcm2vol"/>
+    <add key="SkipEveryNSlices" value="1"/>
+    <add key="OpenExplorerOnCompletion" value="true"/>
+    <add key="KeepFilesFlag" value="RawVolume, DdsVolume, XmlVolume, TgzRawVolume"/>
+    <add key="LogLevel" value="Info"/> <!--Debug, Info, Warn, Error-->
+    <add key="WaitForEnterToExit" value="true"/>
+    <!--<add key="DicomConverter" value="C:\Program Files (x86)\GDCM 2.0\bin\gdcmconv.exe"/>
+    <add key="DicomConverterArguments" value="-w &quot;$(InputFilename)&quot; &quot;$(OutputFilename)&quot;"/>-->
+    <!--<add key="DicomConverter" value="$(StartupPath)\dcmdjpeg.exe"/>
+    <add key="DicomConverterArguments" value="&quot;$(InputFilename)&quot; &quot;$(OutputFilename)&quot;"/>-->
+  </appSettings>
+
+****************************************************************************************
